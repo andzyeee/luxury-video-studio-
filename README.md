@@ -1,2 +1,217 @@
 # luxury-video-studio-
 AI Luxury Video Generator
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#090909">
+<title>Luxury Video Studio</title>
+<style>
+:root{color-scheme:dark;--bg:#090909;--panel:#151515;--panel2:#1d1d1d;--line:#303030;--gold:#c99a55;--muted:#a8a8a8;--white:#f5f1e9}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--white);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+header{padding:22px 18px 16px;border-bottom:1px solid var(--line);background:linear-gradient(120deg,#17120d,#090909)}
+.kicker{color:var(--gold);font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
+h1{font-size:26px;margin:7px 0 5px;letter-spacing:-.5px}
+.sub{color:var(--muted);font-size:13px;line-height:1.45}
+main{max-width:760px;margin:auto;padding:16px;display:grid;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:15px}
+.card h2{font-size:16px;margin:0 0 5px}
+.hint{font-size:12px;color:var(--muted);line-height:1.45;margin:0 0 13px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.slot{background:var(--panel2);border:1px dashed #555;border-radius:12px;overflow:hidden;min-width:0}
+.slot img{display:block;width:100%;height:145px;object-fit:contain;background:#000}
+.slot .meta{padding:9px}
+.slot strong{display:block;font-size:12px}
+.slot small{display:block;color:var(--muted);font-size:11px;margin-top:3px;overflow-wrap:anywhere}
+input[type=file]{width:100%;font-size:11px;margin-top:8px;color:var(--muted)}
+textarea{width:100%;min-height:170px;resize:vertical;background:#0d0d0d;color:var(--white);border:1px solid var(--line);border-radius:10px;padding:12px;font:14px/1.55 inherit}
+button{border:0;border-radius:11px;padding:12px 14px;font-weight:700;font-size:13px;cursor:pointer}
+.primary{background:var(--gold);color:#17110a}
+.secondary{background:#292929;color:var(--white);border:1px solid #444}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.preview{background:#000;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:9/16;max-height:520px;margin:10px auto 0;display:flex;align-items:center;justify-content:center}
+.preview img{width:100%;height:100%;object-fit:contain}
+.caption{position:absolute;bottom:11%;left:7%;right:7%;text-align:center;font-weight:700;font-size:clamp(15px,4vw,23px);text-shadow:0 2px 8px #000,0 1px 3px #000}
+.preview-label{position:absolute;top:12px;left:12px;background:#000b;padding:6px 9px;border-radius:7px;color:#e5c18c;font-size:10px;letter-spacing:1px}
+.status{color:var(--muted);font-size:12px;margin-top:10px;line-height:1.5}
+.timeline{display:grid;gap:8px}
+.scene{display:flex;gap:10px;align-items:center;background:var(--panel2);padding:9px;border-radius:10px}
+.scene button{padding:8px 10px}
+.scene .sceneText{min-width:0;flex:1}
+.scene b{font-size:12px}
+.scene small{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.note{border-left:3px solid var(--gold);padding:9px 11px;background:#211a11;color:#e7d7bf;border-radius:0 9px 9px 0;font-size:12px;line-height:1.5}
+footer{text-align:center;color:#777;font-size:11px;padding:4px 18px 28px}
+@media(min-width:620px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.slot img{height:170px}}
+</style>
+</head>
+<body>
+<header>
+<div class="kicker">Faceless content production</div>
+<h1>Luxury Video Studio</h1>
+<div class="sub">Build and preview your Hermès Birkin Short from your iPhone.</div>
+</header>
+<main>
+<section class="card">
+<h2>01 · Your visual assets</h2>
+<p class="hint">Choose an image from Photos or Files for each scene. Images stay in this browser session; they are not uploaded to a server.</p>
+<div class="grid" id="assetGrid"></div>
+</section>
+<section class="card">
+<h2>02 · Narration script</h2>
+<p class="hint">Edit the voiceover. Use Play narration to hear your device's built-in speech voice (voice availability depends on your browser).</p>
+<textarea id="script">This is a Hermès Birkin, and its price starts with a needle. Two needles, actually, working one waxed linen thread. Every stitch is made by hand. One artisan makes each bag, start to finish. That takes time, so only so many bags get made. Stores rarely have one, and buyers wait for a call. So the price holds more than leather. It holds hand work, and scarcity. And it all comes back to the stitch.</textarea>
+<div class="actions">
+<button class="primary" id="speak">▶ Play narration</button>
+<button class="secondary" id="stopSpeak">Stop voice</button>
+</div>
+<div class="status" id="voiceStatus">Uses your browser's speech synthesis. This does not create a downloadable narration audio file.</div>
+</section>
+<section class="card">
+<h2>03 · Scene preview</h2>
+<p class="hint">Tap any scene below to preview its image and on-screen label.</p>
+<div class="preview">
+<img id="previewImg" alt="Selected scene preview" hidden>
+<div class="preview-label" id="previewTag">SCENE 01 / 10</div>
+<div class="caption" id="previewCaption">Hermès Birkin</div>
+</div>
+<div class="status" id="previewStatus">Upload your first image, then select a scene.</div>
+<div class="timeline" id="timeline"></div>
+</section>
+<section class="card">
+<h2>04 · Export project</h2>
+<p class="hint">Download a project manifest containing the narration, shot timing, asset names, and scene labels. This is not the finished MP4.</p>
+<div class="actions">
+<button class="primary" id="exportJson">↓ Export project JSON</button>
+<button class="secondary" id="reset">Reset previews</button>
+</div>
+<div class="status" id="exportStatus">MP4 rendering and AI image/voice generation require a rendering backend and model/API connection. This starter dashboard does not pretend those services are connected.</div>
+</section>
+<div class="note">Privacy note: selecting images previews them locally in your browser. Exporting the JSON manifest does not embed the image files; keep your original images alongside the project.</div>
+</main>
+<footer>Luxury Video Studio · Local prototype · No account or paid hosting required</footer>
+<script>
+const assets=[
+{id:"birkin_bag",name:"Birkin-style handbag",file:"birkin_bag.png",hint:"Shots 1 and 10"},
+{id:"needles_thread",name:"Two needles and thread",file:"needles_thread.png",hint:"Shot 2"},
+{id:"stitch_closeup",name:"Hand-stitched seam",file:"stitch_closeup.png",hint:"Shots 3 and 5"},
+{id:"artisan_hands",name:"Artisan hands",file:"artisan_hands.png",hint:"Shots 4 and 8"},
+{id:"leather_hide",name:"Leather detail",file:"leather_hide.png",hint:"Shot 7"},
+{id:"empty_pedestal",name:"Empty pedestal",file:"empty_pedestal.png",hint:"Shots 6 and 9"}
+];
+const shots=[
+{id:1,start:0,end:4,asset:"birkin_bag",label:"Hermès Birkin",camera:"slow push in",line:"This is a Hermès Birkin, and its price starts with a needle."},
+{id:2,start:4,end:7,asset:"needles_thread",label:"",camera:"zoom toward thread",line:"Two needles, actually, working one waxed linen thread."},
+{id:3,start:7,end:10,asset:"stitch_closeup",label:"",camera:"glide along seam",line:"Every stitch is made by hand."},
+{id:4,start:10,end:14,asset:"artisan_hands",label:"1 artisan",camera:"pull back to reveal hands",line:"One artisan makes each bag, start to finish."},
+{id:5,start:14,end:18,asset:"stitch_closeup",label:"",camera:"pull back along seam",line:"That takes time, so only so many bags get made."},
+{id:6,start:18,end:22,asset:"empty_pedestal",label:"",camera:"pull back into dark space",line:"Stores rarely have one, and buyers wait for a call."},
+{id:7,start:22,end:25,asset:"leather_hide",label:"Leather",camera:"gentle drift down and right",line:"So the price holds more than leather."},
+{id:8,start:25,end:28,asset:"artisan_hands",label:"Hand work",camera:"slow push in",line:"It holds hand work,"},
+{id:9,start:28,end:30,asset:"empty_pedestal",label:"Scarcity",camera:"settle",line:"and scarcity."},
+{id:10,start:30,end:34,asset:"birkin_bag",label:"",camera:"pull back to opening view",line:"And it all comes back to the stitch."}
+];
+const chosen={};
+let active=0;
+const grid=document.getElementById("assetGrid");
+assets.forEach(a=>{
+const box=document.createElement("div");
+box.className="slot";
+const img=document.createElement("img");
+img.alt=a.name;
+img.id="asset-"+a.id;
+img.hidden=true;
+const meta=document.createElement("div");
+meta.className="meta";
+meta.innerHTML=`<strong>${a.name}</strong><small>${a.hint}</small>`;
+const input=document.createElement("input");
+input.type="file";
+input.accept="image/*";
+input.setAttribute("aria-label","Upload "+a.name);
+input.addEventListener("change",e=>{
+const f=e.target.files&&e.target.files[0];
+if(!f)return;
+if(chosen[a.id])URL.revokeObjectURL(chosen[a.id]);
+chosen[a.id]=URL.createObjectURL(f);
+img.src=chosen[a.id];
+img.hidden=false;
+refreshPreview();
+});
+meta.appendChild(input);
+box.append(img,meta);
+grid.appendChild(box);
+});
+function refreshPreview(){
+const s=shots[active];
+const src=chosen[s.asset];
+const img=document.getElementById("previewImg");
+document.getElementById("previewTag").textContent=`SCENE ${String(s.id).padStart(2,"0")} / 10`;
+document.getElementById("previewCaption").textContent=s.label||"";
+document.getElementById("previewStatus").textContent=`${s.start}s–${s.end}s · ${s.camera} · ${assets.find(a=>a.id===s.asset).name}`;
+if(src){img.src=src;img.hidden=false;}
+else{img.removeAttribute("src");img.hidden=true;}
+}
+const timeline=document.getElementById("timeline");
+shots.forEach((s,i)=>{
+const row=document.createElement("div");
+row.className="scene";
+const btn=document.createElement("button");
+btn.className="secondary";
+btn.textContent="Preview";
+btn.addEventListener("click",()=>{
+active=i;
+refreshPreview();
+});
+const txt=document.createElement("div");
+txt.className="sceneText";
+txt.innerHTML=`<b>Scene ${String(s.id).padStart(2,"0")} · ${s.start}–${s.end}s</b><small>${s.line}</small>`;
+row.append(txt,btn);
+timeline.appendChild(row);
+});
+refreshPreview();
+document.getElementById("speak").addEventListener("click",()=>{
+if(!("speechSynthesis" in window)){
+document.getElementById("voiceStatus").textContent="Speech synthesis is not available in this browser.";
+return;
+}
+speechSynthesis.cancel();
+const utterance=new SpeechSynthesisUtterance(document.getElementById("script").value);
+utterance.rate=0.94;
+utterance.pitch=1;
+utterance.onstart=()=>document.getElementById("voiceStatus").textContent="Narration is playing.";
+utterance.onend=()=>document.getElementById("voiceStatus").textContent="Narration finished.";
+utterance.onerror=()=>document.getElementById("voiceStatus").textContent="Could not play narration in this browser.";
+speechSynthesis.speak(utterance);
+});
+document.getElementById("stopSpeak").addEventListener("click",()=>{
+if("speechSynthesis"in window)speechSynthesis.cancel();
+document.getElementById("voiceStatus").textContent="Narration stopped.";
+});
+document.getElementById("exportJson").addEventListener("click",()=>{
+const manifest={
+project:"Why a Hermès Birkin Costs So Much",
+format:{aspect_ratio:"9:16",resolution:"1080x1920",duration_seconds:34,fps:30},
+narration:document.getElementById("script").value,
+assets:assets.map(a=>({id:a.id,filename:a.file,uploaded:!!chosen[a.id]})),
+shots
+};
+const blob=new Blob([JSON.stringify(manifest,null,2)],{type:"application/json"});
+const url=URL.createObjectURL(blob);
+const link=document.createElement("a");
+link.href=url;
+link.download="birkin-project.json";
+document.body.appendChild(link);
+link.click();
+link.remove();
+URL.revokeObjectURL(url);
+document.getElementById("exportStatus").textContent="Project JSON export started. Your selected image files are not embedded; keep them separately.";
+});
+document.getElementById("reset").addEventListener("click",()=>{
+Object.keys(chosen).forEach(k=>URL.revokeObjectURL(chosen[k]));
+location.reload();
+});
+</script>
+</body>
+</html>
